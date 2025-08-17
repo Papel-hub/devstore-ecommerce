@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { db } from '@/lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
@@ -14,7 +14,6 @@ import { ToastContainer } from 'react-toastify';
 import { 
   UserCircleIcon, 
   ShieldCheckIcon, 
-  XMarkIcon,
   CheckCircleIcon,
   ExclamationCircleIcon 
 } from '@heroicons/react/24/outline';
@@ -24,56 +23,58 @@ export default function AdminPage() {
   const [descricao, setDescricao] = useState('');
   const [preco, setPreco] = useState('');
   const [imagem, setImagem] = useState('');
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   // Verifica autenticação
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && user.email === 'admin@devstore.com') {
-        setUser(user);
-      } else if (user) {
-        toast.error('Acesso negado! Apenas administradores podem acessar.');
-        router.push('/');
-      } else {
-        router.push('/login');
-      }
-      setLoading(false);
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    if (firebaseUser && firebaseUser.email === "admin@devstore.com") {
+      setUser(firebaseUser);
+    } else if (firebaseUser) {
+      toast.error("Acesso negado! Apenas administradores podem acessar.");
+      router.push("/");
+    } else {
+      router.push("/login");
+    }
+    setLoading(false);
+  });
+
+  return () => unsubscribe();
+}, [router]);
+
+
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+  if (!nome.trim() || !descricao.trim() || !preco || !imagem) {
+    toast.error('Todos os campos são obrigatórios!');
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, 'produtos'), {
+      nome: nome.trim(),
+      descricao: descricao.trim(),
+      preco: parseFloat(preco),
+      imagem: imagem.trim(),
     });
 
-    return () => unsubscribe();
-  }, [router]);
+    toast.success('✅ Produto cadastrado com sucesso!');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!nome.trim() || !descricao.trim() || !preco || !imagem) {
-      toast.error('Todos os campos são obrigatórios!');
-      return;
-    }
+    // Limpa o formulário
+    setNome('');
+    setDescricao('');
+    setPreco('');
+    setImagem('');
 
-    try {
-      await addDoc(collection(db, 'produtos'), {
-        nome: nome.trim(),
-        descricao: descricao.trim(),
-        preco: parseFloat(preco),
-        imagem: imagem.trim(),
-      });
-      
-      toast.success('✅ Produto cadastrado com sucesso!');
-      
-      // Limpa o formulário
-      setNome('');
-      setDescricao('');
-      setPreco('');
-      setImagem('');
-      
-    } catch (error) {
-      console.error('Erro ao cadastrar produto:', error);
-      toast.error('❌ Erro ao cadastrar produto. Tente novamente.');
-    }
-  };
+  } catch (error) {
+    console.error('Erro ao cadastrar produto:', error);
+    toast.error('❌ Erro ao cadastrar produto. Tente novamente.');
+  }
+};
+
 
   if (loading) {
     return (

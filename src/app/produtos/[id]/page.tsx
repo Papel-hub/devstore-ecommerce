@@ -21,7 +21,7 @@ interface Avaliacao {
   usuario: string;
   estrelas: number;
   comentario: string;
-   string;
+  data: string;
 }
 
 interface Product {
@@ -31,6 +31,7 @@ interface Product {
   preco: number;
   imagem: string;
   avaliacoes: Avaliacao[];
+  quantidade: number;
 }
 
 export default function ProdutoPage() {
@@ -86,12 +87,15 @@ export default function ProdutoPage() {
     }
   };
 
-  const confirmarCompra = () => {
-    addItem(product);
-    toast.success(`${product.nome} adicionado ao carrinho!`);
-    setShowModal(false);
-    router.push('/carrinho');
-  };
+const confirmarCompra = () => {
+  if (!product) return; 
+
+  addItem(product);
+  toast.success(`${product.nome} adicionado ao carrinho!`);
+  setShowModal(false);
+  router.push('/carrinho');
+};
+
 
   const cancelarCompra = () => {
     setShowModal(false);

@@ -18,7 +18,7 @@ interface Pedido {
     imagem: string;
   }>;
   total: number;
-   string;
+  data: string;
   status: string;
 }
 

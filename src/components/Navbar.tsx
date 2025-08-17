@@ -5,6 +5,7 @@ import { auth } from '@/lib/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { User } from "firebase/auth";
 import { 
   SunIcon, 
   MoonIcon, 
@@ -15,7 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function Navbar() {
-  const [user, setUser] = useState<any>(null);
+ const [user, setUser] = useState<User | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
+import { FirebaseError } from "firebase/app";
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -36,61 +37,71 @@ export default function LoginPage() {
   const router = useRouter();
   const provider = new GoogleAuthProvider();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setCarregando(true);
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setCarregando(true);
 
-    try {
-      if (isLogin) {
-        // Login com email e senha
-        await signInWithEmailAndPassword(auth, email, senha);
-        toast.success('Bem-vindo de volta!');
-      } else {
-        // Cadastro de novo usuário
-        if (!nome.trim()) {
-          toast.error('Por favor, insira seu nome');
-          setCarregando(false);
-          return;
-        }
-        const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
-        await updateProfile(userCredential.user, { displayName: nome });
-        toast.success('Conta criada com sucesso!');
+  try {
+    if (isLogin) {
+      // Login com email e senha
+      await signInWithEmailAndPassword(auth, email, senha);
+      toast.success("Bem-vindo de volta!");
+    } else {
+      // Cadastro de novo usuário
+      if (!nome.trim()) {
+        toast.error("Por favor, insira seu nome");
+        setCarregando(false);
+        return;
       }
-      router.push('/');
-    } catch (error) {
-      let mensagem = 'Erro ao processar';
-      switch (error.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-          mensagem = 'Email ou senha inválidos';
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+      await updateProfile(userCredential.user, { displayName: nome });
+      toast.success("Conta criada com sucesso!");
+    }
+    router.push("/");
+  } catch (err) {
+    let mensagem = "Erro ao processar";
+
+    if (err instanceof FirebaseError) {
+      switch (err.code) {
+        case "auth/user-not-found":
+        case "auth/wrong-password":
+          mensagem = "Email ou senha inválidos";
           break;
-        case 'auth/email-already-in-use':
-          mensagem = 'Este email já está em uso';
+        case "auth/email-already-in-use":
+          mensagem = "Este email já está em uso";
           break;
-        case 'auth/weak-password':
-          mensagem = 'A senha deve ter pelo menos 6 caracteres';
+        case "auth/weak-password":
+          mensagem = "A senha deve ter pelo menos 6 caracteres";
           break;
         default:
-          mensagem = error.message;
+          mensagem = err.message;
       }
-      toast.error(mensagem);
-    } finally {
-      setCarregando(false);
     }
-  };
 
-  const handleGoogleLogin = async () => {
-    setCarregando(true);
-    try {
-      await signInWithPopup(auth, provider);
-      toast.success('Logado com Google!');
-      router.push('/');
-    } catch (error) {
-      toast.error('Erro ao fazer login com Google: ' + error.message);
-    } finally {
-      setCarregando(false);
+    toast.error(mensagem);
+  } finally {
+    setCarregando(false);
+  }
+};
+
+const handleGoogleLogin = async () => {
+  setCarregando(true);
+  try {
+    await signInWithPopup(auth, provider);
+    toast.success("Logado com Google!");
+    router.push("/");
+  } catch (err) {
+    let mensagem = "Erro ao fazer login com Google";
+    
+    if (err instanceof FirebaseError) {
+      mensagem = err.message; // mensagem mais detalhada do Firebase
     }
-  };
+
+    toast.error(mensagem);
+  } finally {
+    setCarregando(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 py-12">

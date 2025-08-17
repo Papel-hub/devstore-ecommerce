@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { toast } from 'react-toastify';
@@ -17,23 +17,33 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function PerfilPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const router = useRouter();
 
+
+    
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
       } else {
-        router.push('/login');
+        router.push("/login");
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, [router]);
+
+  if (loading) {
+    return <p>Carregando...</p>; // <-- agora aqui sim
+  }
+
+  if (!user) {
+    return null; // ou redireciona para login
+  }
 
   const handleLogout = async () => {
     setLogoutLoading(true);
